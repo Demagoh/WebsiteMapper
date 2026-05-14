@@ -4,7 +4,7 @@
  * A CLI website mapper utility.
  * 
  * @author  Demagoh     https://github.com/Demagoh
- * @version 1.0 - WIP
+ * @version 1.0
  */
 
 /// Set up start variables
@@ -233,9 +233,10 @@ function exploreDirectory($directoryPath) {
         
         $shouldBeIgnored = false;
 
-        foreach ($pathsToIgnore as $pathToIgnore) {
+        foreach ($pathsToIgnore as &$pathToIgnore) {
             if ($pathToIgnore["path"] == $elementInDirectory) {
                 $shouldBeIgnored = true;
+                $pathToIgnore["found"] = true;
                 break;
             }
         }
@@ -244,9 +245,10 @@ function exploreDirectory($directoryPath) {
             $shouldBeGeneralized = false;
 
             if (is_dir($elementInDirectory)) {
-                foreach ($dirsToGeneralize as $dirToGeneralize) {
+                foreach ($dirsToGeneralize as &$dirToGeneralize) {
                     if ($dirToGeneralize["path"] == $elementInDirectory) {
                         $shouldBeGeneralized = true;
+                        $dirToGeneralize["found"] = true;
                         break;
                     }
                 }
@@ -260,10 +262,11 @@ function exploreDirectory($directoryPath) {
                 $shouldBeCulled = false;
 
                 if (!is_dir($elementInDirectory)) {
-                    foreach ($indexesToCull as $indexToCull) {
+                    foreach ($indexesToCull as &$indexToCull) {
                         if ($indexToCull["path"] == str_replace($websiteRootPath, "",
                             $elementInDirectory)) {
                             $shouldBeCulled = true;
+                            $indexToCull["found"] = true;
                             break;
                         }
                     }
@@ -304,7 +307,42 @@ $websiteMap = exploreDirectory($websiteRootPath);
 
 
 /// Save website map
-$feedback = "Your website map has been generated, do you want it to be written to a file:\n";
+$feedback = "\n\e[0;32mYour website map has been generated.\e[m\n";
+
+$missedListItems = false;
+
+/**
+ * Function to get a list of all the ignore, generalize and cull list items that weren't found.
+ * 
+ * @param   array   $list       List of paths to check.
+ * @return  string              String containing all the not found paths in the current list.
+ */
+function displayListItemsThatWereNotFound($list) {
+    global $missedListItems;
+
+    $feedbackToReturn = "";
+
+    foreach ($list as $item) {
+        if (!$item["found"]) {
+            if (!$missedListItems) {
+                $missedListItems = true;
+    
+                $feedbackToReturn .= "The website mapper failed to find the following "
+                    ."specified paths:\n";
+            }
+
+            $feedbackToReturn .= " - \e[0;33m" .$item["path"] ."\e[m\n";
+        }
+    }
+
+    return $feedbackToReturn;
+}
+
+$feedback .= displayListItemsThatWereNotFound($pathsToIgnore);
+$feedback .= displayListItemsThatWereNotFound($dirsToGeneralize);
+$feedback .= displayListItemsThatWereNotFound($indexesToCull);
+
+$feedback .= "Do you want it to be written to a file:\n";
 $feedback .= "\e[0;33m 1) as plain text\e[m\n";
 $feedback .= "\e[0;33m 2) in the form of a Cloudflare rule expression\e[m\n";
 $feedback .= "\e[0;33m 3) in the form of a Cloudflare rule expression, but without the .html and"

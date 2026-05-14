@@ -11,7 +11,9 @@ You can also specify how you want the map of the website to be formatted:
 - as plain text
 - as a Cloudflare rule expression.
 
-At some point I'll also put in a feature to let you know which paths weren't found. I might also add more ways to format the website map.
+The mapper also lets you know which paths that you specified it was unable to find.
+
+At some point I might also add more ways to format the website map.
 
 ## License
 This script is licensed under the <a href="LICENSE" target="_blank">MIT license</a>.
